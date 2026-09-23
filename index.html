@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laporan Praktikum AI Generator</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 800px; margin: 0 auto; }
+        .card { background: white; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.25); padding: 40px; margin-bottom: 20px; }
+        .header { text-align: center; color: white; margin-bottom: 30px; }
+        .header h1 { font-size: 2.25em; margin-bottom: 10px; font-weight: 700; }
+        .header p { font-size: 1.05em; opacity: 0.92; }
+        
+        .info-box { background: #e3f2fd; border-left: 4px solid #1976d2; padding: 15px; border-radius: 6px; margin-bottom: 20px; font-size: 0.95em; line-height: 1.6; color: #0d47a1; }
+        
+        /* Layout Grid Fitur sama persis dengan versi orisinil */
+        .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 25px; }
+        .feature-item { background: #f8f9fa; padding: 14px; border-radius: 8px; font-size: 0.95em; }
+        .feature-item::before { content: "✓ "; color: #667eea; font-weight: bold; }
+        
+        /* Provider Config Section */
+        .config-section { background: #f8f9ff; border: 1px solid #c5cae9; padding: 20px; border-radius: 8px; margin-bottom: 25px; }
+        .config-section h3 { margin-bottom: 15px; font-size: 1.1em; color: #333; display: flex; align-items: center; gap: 8px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-weight: 600; margin-bottom: 6px; color: #444; font-size: 0.9em; }
+        .form-control { width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.95em; transition: border-color 0.2s; }
+        .form-control:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102,126,234,0.1); }
+        .form-row { display: flex; gap: 15px; margin-bottom: 15px; }
+        .form-row > div { flex: 1; }
+        .small-text { font-size: 0.8em; color: #6b7280; margin-top: 4px; display: block; }
+        
+        .upload-section { margin-bottom: 25px; }
+        .upload-label { display: block; font-weight: 600; margin-bottom: 10px; color: #333; }
+        .file-input-wrapper { position: relative; display: block; cursor: pointer; margin-bottom: 10px; }
+        .file-input-label { display: block; padding: 20px; border: 2px dashed #667eea; border-radius: 8px; text-align: center; background: #f8f9ff; transition: all 0.2s ease; cursor: pointer; }
+        .file-input-label:hover, .file-input-label.drag-over { border-color: #764ba2; background: #f0f2ff; }
+        input[type="file"] { display: none; }
+        .file-info { margin-top: 10px; padding: 10px; background: #e8f5e9; border-radius: 6px; color: #2e7d32; font-size: 0.95em; display: none; overflow-wrap:anywhere; }
+        .file-info.show { display: block; }
+        
+        .button-group { display: flex; gap: 10px; margin-top: 10px; }
+        button { flex: 1; padding: 13px 24px; border: none; border-radius: 8px; font-size: 1em; font-weight: 600; cursor: pointer; transition: all 0.2s ease; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; transform:none !important; box-shadow:none !important; }
+        .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .btn-primary:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 16px rgba(102, 126, 234, 0.35); }
+        .btn-secondary { background: #f0f0f0; color: #333; }
+        .btn-secondary:hover:not(:disabled) { background: #e0e0e0; }
+        
+        .status-box { margin-top: 25px; padding: 15px; border-radius: 8px; display: none; }
+        .status-box.show { display: block; }
+        .status-loading { background: #e3f2fd; color: #1976d2; border-left: 4px solid #1976d2; padding: 10px; border-radius: 4px;}
+        .status-success { background: #e8f5e9; color: #2e7d32; border-left: 4px solid #2e7d32; padding: 10px; border-radius: 4px;}
+        .status-error { background: #ffebee; color: #c62828; border-left: 4px solid #c62828; padding: 10px; border-radius: 4px;}
+        .spinner { display: inline-block; width: 18px; height: 18px; border: 3px solid rgba(25,118,210,.25); border-radius: 50%; border-top-color: #1976d2; animation: spin 1s linear infinite; margin-right: 9px; vertical-align: -4px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .progress-bar { width: 100%; height: 5px; background: #e0e0e0; border-radius: 3px; margin-top: 12px; overflow: hidden; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #667eea, #764ba2); width: 0%; transition: width 0.25s ease; }
+        
+        @media (max-width: 640px) {
+            .card { padding: 22px; }
+            .form-row { flex-direction: column; gap: 10px; }
+            .button-group { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📚 Laporan Praktikum AI</h1>
+            <p>Generate laporan otomatis berbasis AI by MASR (Multi-Provider Edition)</p>
+        </div>
+
+        <div class="card">
+            <div class="info-box">
+                <strong>🔒 Aman & Privat:</strong> Aplikasi ini berjalan sepenuhnya di browser Anda. API Key Anda diproses secara lokal dan langsung dikirim ke penyedia AI pilihan Anda.
+            </div>
+
+            <!-- Provider Config Section -->
+            <div class="config-section">
+                <h3>⚙️ Konfigurasi Provider AI</h3>
+                <div class="form-group">
+                    <label>Pilih Provider</label>
+                    <select id="apiProvider" class="form-control">
+                        <option value="anthropic" data-format="anthropic" data-url="https://api.anthropic.com/v1/messages" data-model="claude-3-5-sonnet-20240620">Anthropic (Claude) - Support PDF</option>
+                        <option value="openai" data-format="openai" data-url="https://api.openai.com/v1/chat/completions" data-model="gpt-4o">OpenAI (ChatGPT)</option>
+                        <option value="gemini" data-format="openai" data-url="https://generativelanguage.googleapis.com/v1beta/openai/chat/completions" data-model="gemini-1.5-pro">Google Gemini</option>
+                        <option value="groq" data-format="openai" data-url="https://api.groq.com/openai/v1/chat/completions" data-model="llama-3.2-11b-vision-preview">Groq</option>
+                        <option value="openrouter" data-format="openai" data-url="https://openrouter.ai/api/v1/chat/completions" data-model="google/gemini-pro-1.5">OpenRouter</option>
+                        <option value="custom_openai" data-format="openai" data-url="http://localhost:11434/v1/chat/completions" data-model="llava">Local AI (Ollama / LM Studio)</option>
+                        <option value="custom_anthropic" data-format="anthropic" data-url="https://api.custom.com/v1/messages" data-model="custom-model">Custom Provider</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <div>
+                        <label>Endpoint URL</label>
+                        <input type="text" id="apiUrl" class="form-control" placeholder="https://api.anthropic.com/v1/messages">
+                    </div>
+                    <div>
+                        <label>ID Model AI</label>
+                        <input type="text" id="apiModel" class="form-control" placeholder="claude-3-5-sonnet-20240620">
+                    </div>
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>API Key Anda</label>
+                    <input type="password" id="apiKey" class="form-control" placeholder="sk-...">
+                    <span class="small-text">Data tersimpan di penyimpanan lokal browser Anda secara aman. Kosongkan jika pakai Local AI.</span>
+                </div>
+            </div>
+
+            <!-- Bagian ini sudah diubah sesuai dengan permintaan agar sama persis dengan versi orisinil -->
+            <div class="features">
+                <div class="feature-item">3 Halaman Analisis</div>
+                <div class="feature-item">5 Poin Kesimpulan</div>
+                <div class="feature-item">2 Saran Actionable</div>
+                <div class="feature-item">5 Referensi IEEE</div>
+                <div class="feature-item" style="color: #667eea;">✨ Auto Humanizer</div>
+                <div class="feature-item" style="color: #667eea;">✨ Auto Anti-Slop</div>
+            </div>
+
+            <div class="upload-section">
+                <label class="upload-label">📖 Upload Modul Praktikum (PDF / Gambar)</label>
+                <div class="file-input-wrapper" id="modulWrapper">
+                    <label class="file-input-label" for="modulInput" id="modulLabel">
+                        <div>Klik atau drag file modul ke sini</div>
+                        <small style="color:#666">Format PDF (Khusus Anthropic/Claude) atau Format Gambar JPG/PNG</small>
+                    </label>
+                    <input type="file" id="modulInput" accept="application/pdf,image/jpeg,image/png,.pdf,.jpg,.jpeg,.png">
+                </div>
+                <div class="file-info" id="modulInfo"></div>
+            </div>
+
+            <div class="upload-section">
+                <label class="upload-label">📸 Upload Foto Hasil Data Praktikum (JPG/PNG)</label>
+                <div class="file-input-wrapper" id="fotoWrapper">
+                    <label class="file-input-label" for="fotoInput" id="fotoLabel">
+                        <div>Klik atau drag file gambar ke sini</div>
+                    </label>
+                    <input type="file" id="fotoInput" accept="image/jpeg,image/png,.jpg,.jpeg,.png">
+                </div>
+                <div class="file-info" id="fotoInfo"></div>
+            </div>
+
+            <div class="button-group">
+                <button class="btn-primary" id="generateBtn" disabled>🚀 Generate Laporan</button>
+                <button class="btn-secondary" id="resetBtn">🔄 Reset</button>
+            </div>
+
+            <div class="status-box" id="statusBox">
+                <div id="statusContent"></div>
+                <div class="progress-bar" id="progressBar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        'use strict';
+
+        const MAX_FILE_SIZE = 50 * 1024 * 1024;
+        
+        const apiProvider = document.getElementById('apiProvider');
+        const apiUrl = document.getElementById('apiUrl');
+        const apiModel = document.getElementById('apiModel');
+        const apiKey = document.getElementById('apiKey');
+        const modulInput = document.getElementById('modulInput');
+        const fotoInput = document.getElementById('fotoInput');
+        const modulInfo = document.getElementById('modulInfo');
+        const fotoInfo = document.getElementById('fotoInfo');
+        const generateBtn = document.getElementById('generateBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const statusBox = document.getElementById('statusBox');
+        const statusContent = document.getElementById('statusContent');
+        const progressFill = document.getElementById('progressFill');
+
+        let modulFile = null;
+        let fotoFile = null;
+
+        window.addEventListener('load', () => {
+            if(localStorage.getItem('ai_provider')) apiProvider.value = localStorage.getItem('ai_provider');
+            if(localStorage.getItem('ai_url')) apiUrl.value = localStorage.getItem('ai_url');
+            if(localStorage.getItem('ai_model')) apiModel.value = localStorage.getItem('ai_model');
+            if(localStorage.getItem('ai_key')) apiKey.value = localStorage.getItem('ai_key');
+            
+            if(!apiUrl.value || !apiModel.value) {
+                applyProviderPreset();
+            }
+        });
+
+        apiProvider.addEventListener('change', () => {
+            applyProviderPreset();
+            saveConfig();
+        });
+
+        [apiUrl, apiModel, apiKey].forEach(el => {
+            el.addEventListener('input', saveConfig);
+        });
+
+        function applyProviderPreset() {
+            const selectedOption = apiProvider.options[apiProvider.selectedIndex];
+            apiUrl.value = selectedOption.getAttribute('data-url');
+            apiModel.value = selectedOption.getAttribute('data-model');
+        }
+
+        function saveConfig() {
+            localStorage.setItem('ai_provider', apiProvider.value);
+            localStorage.setItem('ai_url', apiUrl.value);
+            localStorage.setItem('ai_model', apiModel.value);
+            localStorage.setItem('ai_key', apiKey.value);
+        }
+
+        modulInput.addEventListener('change', (e) => setSelectedFile('modul', e.target.files[0]));
+        fotoInput.addEventListener('change', (e) => setSelectedFile('foto', e.target.files[0]));
+        setupDragDrop('modulWrapper', modulInput, 'modul');
+        setupDragDrop('fotoWrapper', fotoInput, 'foto');
+
+        function setupDragDrop(wrapperId, inputElement, type) {
+            const wrapper = document.getElementById(wrapperId);
+            const label = wrapper.querySelector('.file-input-label');
+            wrapper.addEventListener('dragover', (e) => { e.preventDefault(); label.classList.add('drag-over'); });
+            wrapper.addEventListener('dragleave', () => label.classList.remove('drag-over'));
+            wrapper.addEventListener('drop', (e) => {
+                e.preventDefault();
+                label.classList.remove('drag-over');
+                const file = e.dataTransfer.files && e.dataTransfer.files[0];
+                if (file) setSelectedFile(type, file);
+            });
+        }
+
+        function setSelectedFile(type, file) {
+            if (!file) return;
+            
+            const fileName = file.name.toLowerCase();
+            const fileType = file.type;
+
+            const isImage = fileType === 'image/jpeg' || fileType === 'image/png' || 
+                            fileName.endsWith('.jpg') || fileName.endsWith('.jpeg') || fileName.endsWith('.png');
+            
+            const isPdf = fileType === 'application/pdf' || fileName.endsWith('.pdf');
+            
+            if (type === 'modul' && !isPdf && !isImage) {
+                showStatus('error', '❌ Modul harus berupa file PDF, JPG, atau PNG.');
+                return;
+            }
+            if (type === 'foto' && !isImage) {
+                showStatus('error', '❌ Foto harus berupa gambar JPG atau PNG.');
+                return;
+            }
+            if (file.size > MAX_FILE_SIZE) {
+                showStatus('error', `❌ ${file.name} melebihi ukuran batas 50MB.`);
+                return;
+            }
+            
+            if (type === 'modul') modulFile = file;
+            else fotoFile = file;
+            updateFileInfo();
+            hideStatusIfIdle();
+        }
+
+        function updateFileInfo() {
+            if (modulFile) {
+                modulInfo.textContent = `✓ Modul: ${modulFile.name} (${formatBytes(modulFile.size)})`;
+                modulInfo.classList.add('show');
+            } else modulInfo.classList.remove('show');
+            
+            if (fotoFile) {
+                fotoInfo.textContent = `✓ Foto: ${fotoFile.name} (${formatBytes(fotoFile.size)})`;
+                fotoInfo.classList.add('show');
+            } else fotoInfo.classList.remove('show');
+            
+            generateBtn.disabled = !(modulFile && fotoFile);
+        }
+
+        generateBtn.addEventListener('click', async () => {
+            if (!apiUrl.value.trim() || !apiModel.value.trim()) {
+                showStatus('error', '❌ Mohon lengkapi Endpoint URL dan ID Model di panel atas.');
+                return;
+            }
+            if (!modulFile || !fotoFile) return;
+
+            const selectedOption = apiProvider.options[apiProvider.selectedIndex];
+            const apiFormat = selectedOption.getAttribute('data-format');
+
+            setBusy(true);
+            statusBox.classList.add('show');
+            showStatus('loading', '🔄 Membaca file dan mengubah ke format teks...');
+            progressFill.style.width = '15%';
+
+            try {
+                const [modulBase64, fotoBase64] = await Promise.all([
+                    fileToBase64(modulFile),
+                    fileToBase64(fotoFile)
+                ]);
+
+                progressFill.style.width = '35%';
+                showStatus('loading', `🤖 Mengirim prompt aman ke provider AI (${apiModel.value})...`);
+
+                const systemPrompt = `Anda adalah AI ahli akademis yang menulis laporan praktikum profesional.
+
+[ATURAN HUMANIZER]: Tulis dengan gaya bahasa natural dan mengalir layaknya mahasiswa cerdas. Gunakan panjang kalimat yang bervariasi. Hindari struktur kalimat yang terlalu simetris, mekanis, atau repetitif khas robot. Buat paragraf yang kohesif namun tetap bernada praktis.
+
+[ATURAN ANTI-SLOP]: Dilarang keras menggunakan kata klise AI seperti: 'menyelami', 'permadani', 'lanskap', 'revolusioner', 'harta karun', 'tak terbantahkan', 'secara krusial', 'sangat penting'. Jangan gunakan kalimat pembuka/penutup metaforis, dramatis, atau bertele-tele (misal: 'Dalam dunia jaringan yang terus berkembang...'). Langsung ke inti teknis pembahasan.
+
+Berdasarkan modul referensi dan foto hasil praktikum, buat laporan teknis mendetail dengan pemisah teks eksak "---BREAK---" di antara setiap bab (Wajib digunakan!).
+
+===ANALISIS & PEMBAHASAN===
+Tulis analisis dan pembahasan panjang yang sangat komprehensif (setara 3 halaman penuh, sekitar 1000-1500 kata). Jabarkan secara detail teori dari modul dikaitkan dengan hasil di foto secara mendalam.
+---BREAK---
+===KESIMPULAN===
+Tulis TEPAT 5 poin kesimpulan padat dan jelas.
+---BREAK---
+===SARAN===
+Tulis TEPAT 2 poin saran perbaikan yang actionable.
+---BREAK---
+===DAFTAR PUSTAKA===
+Tulis TEPAT 5 referensi format IEEE yang relevan dengan materi.`;
+
+                let requestBody, headers;
+
+                if (apiFormat === 'anthropic') {
+                    headers = {
+                        'Content-Type': 'application/json',
+                        'x-api-key': apiKey.value.trim(),
+                        'anthropic-version': '2023-06-01',
+                        'anthropic-dangerous-direct-browser-access': 'true' 
+                    };
+                    
+                    const modulContent = modulFile.type === 'application/pdf' 
+                        ? { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: modulBase64 } }
+                        : { type: 'image', source: { type: 'base64', media_type: modulFile.type || 'image/jpeg', data: modulBase64 } };
+
+                    requestBody = {
+                        model: apiModel.value.trim(),
+                        max_tokens: 4096,
+                        system: systemPrompt,
+                        messages: [{
+                            role: 'user',
+                            content: [
+                                { type: 'text', text: "Berikut dokumen referensi modul dan foto hasil praktikum:" },
+                                modulContent,
+                                { type: 'image', source: { type: 'base64', media_type: fotoFile.type || 'image/jpeg', data: fotoBase64 } }
+                            ]
+                        }]
+                    };
+                } else {
+                    headers = {
+                        'Content-Type': 'application/json'
+                    };
+                    if (apiKey.value.trim()) {
+                        headers['Authorization'] = `Bearer ${apiKey.value.trim()}`;
+                    }
+
+                    const fotoMime = fotoFile.type || 'image/jpeg';
+                    const userContent = [
+                        { type: 'text', text: "Analisis modul referensi dan hasil foto praktikum teknis berikut ini." },
+                        { type: 'image_url', image_url: { url: `data:${fotoMime};base64,${fotoBase64}` } }
+                    ];
+
+                    if (modulFile.type === 'application/pdf') {
+                        alert("Catatan: Kebanyakan Provider OpenAI/Vision tidak mendukung file PDF langsung. Jika gagal, mohon ganti File Modul menjadi format Gambar (JPG/PNG) atau gunakan provider Anthropic/Claude.");
+                    } else {
+                        userContent.push({ type: 'image_url', image_url: { url: `data:${modulFile.type || 'image/jpeg'};base64,${modulBase64}` } });
+                    }
+
+                    requestBody = {
+                        model: apiModel.value.trim(),
+                        messages: [
+                            { role: 'system', content: systemPrompt },
+                            { role: 'user', content: userContent }
+                        ]
+                    };
+                }
+
+                const response = await fetch(apiUrl.value.trim(), {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify(requestBody)
+                });
+
+                progressFill.style.width = '70%';
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    const errorMsg = data.error?.message || data.message || `API Error Status: ${response.status}`;
+                    throw new Error(errorMsg);
+                }
+
+                let contentText = '';
+                if (apiFormat === 'anthropic') {
+                    contentText = data.content?.[0]?.text || '';
+                } else {
+                    contentText = data.choices?.[0]?.message?.content || '';
+                }
+
+                if (!contentText) throw new Error('Model berhasil dihubungi, namun mengembalikan respons kosong.');
+
+                showStatus('loading', '📝 Menulis dan memformat dokumen Microsoft Word (.docx)...');
+                
+                const laporan = parseReport(contentText);
+                const docBuffer = await generateWordDocument(laporan);
+
+                progressFill.style.width = '90%';
+                
+                downloadBlob(
+                    new Blob([docBuffer], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }),
+                    `Laporan-Praktikum-AI-${new Date().toISOString().slice(0,10)}.docx`
+                );
+
+                progressFill.style.width = '100%';
+                showStatus('success', '✅ Selesai! Laporan berhasil di-generate dan otomatis diunduh ke perangkat Anda.');
+            } catch (error) {
+                console.error('Proses Gagal:', error);
+                progressFill.style.width = '0%';
+                showStatus('error', `❌ Gagal: ${error.message}`);
+            } finally {
+                setBusy(false);
+            }
+        });
+
+        resetBtn.addEventListener('click', () => {
+            modulInput.value = ''; fotoInput.value = '';
+            modulFile = null; fotoFile = null;
+            updateFileInfo();
+            statusBox.classList.remove('show');
+            statusContent.textContent = '';
+            progressFill.style.width = '0%';
+        });
+
+        function setBusy(busy) {
+            generateBtn.disabled = busy || !(modulFile && fotoFile);
+            resetBtn.disabled = busy;
+            [apiProvider, apiUrl, apiKey, apiModel].forEach(el => el.disabled = busy);
+        }
+
+        function showStatus(type, message) {
+            statusBox.classList.add('show');
+            const spinner = type === 'loading' ? '<span class="spinner"></span>' : '';
+            statusContent.innerHTML = `<div class="status-${type}">${spinner}<span>${escapeHtml(message)}</span></div>`;
+        }
+
+        function hideStatusIfIdle() {
+            if (!modulFile && !fotoFile) statusBox.classList.remove('show');
+        }
+
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(String(reader.result).split(',')[1]);
+                reader.onerror = () => reject(new Error('Gagal membaca data file.'));
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function formatBytes(bytes) {
+            if (bytes < 1024) return `${bytes} B`;
+            const units = ['KB', 'MB', 'GB'];
+            let value = bytes / 1024;
+            let unit = units[0];
+            for (let i = 0; value >= 1024 && i < units.length - 1; i++) { value /= 1024; unit = units[i + 1]; }
+            return `${value.toFixed(value >= 10 ? 0 : 1)} ${unit}`;
+        }
+
+        function escapeHtml(text) { return String(text).replace(/[&<>"']/g, ch => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[ch])); }
+
+        function parseReport(content) {
+            const normalized = String(content).replace(/\r\n/g, '\n').trim();
+            const chunks = normalized.split(/---BREAK---/i).map(s => s.trim()).filter(Boolean);
+            
+            if (chunks.length >= 4) {
+                return {
+                    analisis: stripHeading(chunks[0], /===\s*ANALISIS\s*(?:&|DAN)\s*PEMBAHASAN\s*===/i),
+                    kesimpulan: stripHeading(chunks[1], /===\s*KESIMPULAN\s*===/i),
+                    saran: stripHeading(chunks[2], /===\s*SARAN\s*===/i),
+                    pustaka: stripHeading(chunks[3], /===\s*DAFTAR\s+PUSTAKA\s*===/i)
+                };
+            }
+            return {
+                analisis: normalized,
+                kesimpulan: "AI tidak memformat pemisah bab (---BREAK---) dengan benar.",
+                saran: "AI tidak memformat pemisah bab (---BREAK---) dengan benar.",
+                pustaka: "AI tidak memformat pemisah bab (---BREAK---) dengan benar."
+            };
+        }
+
+        function stripHeading(text, regex) { return String(text).replace(regex, '').trim(); }
+
+        async function generateWordDocument(laporan) {
+            const parts = [
+                ['BAB 1 - ANALISIS & PEMBAHASAN', laporan.analisis],
+                ['BAB 2 - KESIMPULAN', laporan.kesimpulan],
+                ['BAB 3 - SARAN', laporan.saran],
+                ['BAB 4 - DAFTAR PUSTAKA', laporan.pustaka]
+            ];
+            const body = parts.map(([title, text], index) => {
+                const pageBreak = index > 0 ? `<w:pageBreakBefore/>` : '';
+                return `<w:p><w:pPr>${pageBreak}<w:spacing w:after="240"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="28"/></w:rPr><w:t>${escapeXml(title)}</w:t></w:r></w:p>` + generateParagraphs(text);
+            }).join('');
+            
+            const docxml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${body}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440"/></w:sectPr></w:body></w:document>`;
+            return createDocxFromXml(docxml);
+        }
+
+        function generateParagraphs(text) {
+            return String(text || '').replace(/\r\n/g, '\n').split('\n').map(line => {
+                const trimmed = line.trim();
+                if (!trimmed) return '';
+                const indent = /^(\d+\.|\*|\-|•)\s/.test(trimmed) ? `<w:ind w:left="480" w:hanging="360"/>` : '';
+                return `<w:p><w:pPr><w:spacing w:after="120" w:line="300" w:lineRule="auto"/><w:jc w:val="both"/>${indent}</w:pPr><w:r><w:rPr><w:sz w:val="24"/></w:rPr><w:t xml:space="preserve">${escapeXml(trimmed)}</w:t></w:r></w:p>`;
+            }).join('');
+        }
+
+        function escapeXml(str) { return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;'); }
+
+        async function createDocxFromXml(docxml) {
+            const contentTypes = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>`;
+            const rels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`;
+            const documentRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"></Relationships>`;
+            
+            return createStoredZip([
+                ['[Content_Types].xml', contentTypes], 
+                ['_rels/.rels', rels], 
+                ['word/document.xml', docxml], 
+                ['word/_rels/document.xml.rels', documentRels]
+            ]);
+        }
+
+        function createStoredZip(entries) {
+            const encoder = new TextEncoder();
+            const localParts = [], centralParts = [];
+            let offset = 0;
+            
+            for (const [name, text] of entries) {
+                const nameBytes = encoder.encode(name), data = encoder.encode(text), crc = crc32(data);
+                
+                const local = new Uint8Array(30 + nameBytes.length + data.length), lv = new DataView(local.buffer);
+                lv.setUint32(0, 0x04034b50, true); lv.setUint16(4, 20, true); lv.setUint16(6, 0, true); lv.setUint16(8, 0, true); lv.setUint16(10, 0, true); lv.setUint16(12, 0, true); lv.setUint32(14, crc, true); lv.setUint32(18, data.length, true); lv.setUint32(22, data.length, true); lv.setUint16(26, nameBytes.length, true); lv.setUint16(28, 0, true);
+                local.set(nameBytes, 30); local.set(data, 30 + nameBytes.length); localParts.push(local);
+                
+                const central = new Uint8Array(46 + nameBytes.length), cv = new DataView(central.buffer);
+                cv.setUint32(0, 0x02014b50, true); cv.setUint16(4, 20, true); cv.setUint16(6, 20, true); cv.setUint16(8, 0, true); cv.setUint16(10, 0, true); cv.setUint16(12, 0, true); cv.setUint16(14, 0, true); cv.setUint32(16, crc, true); cv.setUint32(20, data.length, true); cv.setUint32(24, data.length, true); cv.setUint16(28, nameBytes.length, true); cv.setUint16(30, 0, true); cv.setUint16(32, 0, true); cv.setUint16(34, 0, true); cv.setUint16(36, 0, true); cv.setUint32(38, 0, true); cv.setUint32(42, offset, true);
+                central.set(nameBytes, 46); centralParts.push(central);
+                
+                offset += local.length;
+            }
+            
+            const centralSize = centralParts.reduce((sum, part) => sum + part.length, 0);
+            const end = new Uint8Array(22), ev = new DataView(end.buffer);
+            ev.setUint32(0, 0x06054b50, true); ev.setUint16(4, 0, true); ev.setUint16(6, 0, true); ev.setUint16(8, entries.length, true); ev.setUint16(10, entries.length, true); ev.setUint32(12, centralSize, true); ev.setUint32(16, offset, true); ev.setUint16(20, 0, true);
+            
+            const zip = new Uint8Array(offset + centralSize + end.length);
+            let cursor = 0;
+            for (const part of localParts) { zip.set(part, cursor); cursor += part.length; }
+            for (const part of centralParts) { zip.set(part, cursor); cursor += part.length; }
+            zip.set(end, cursor); 
+            return zip.buffer;
+        }
+
+        function crc32(data) {
+            let crc = 0xffffffff;
+            for (let i = 0; i < data.length; i++) {
+                crc ^= data[i];
+                for (let j = 0; j < 8; j++) crc = (crc >>> 1) ^ (0xedb88320 & -(crc & 1));
+            }
+            return (crc ^ 0xffffffff) >>> 0;
+        }
+
+        function downloadBlob(blob, filename) {
+            const url = URL.createObjectURL(blob), a = document.createElement('a');
+            a.href = url; a.download = filename; 
+            document.body.appendChild(a); 
+            a.click(); 
+            a.remove(); 
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        }
+    </script>
+</body>
+</html>
